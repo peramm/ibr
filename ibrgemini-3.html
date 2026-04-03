@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IBR Loan Simulator 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2330;
+  --border: #2a3341;
+  --border-light: #334155;
+  --text: #e6edf3;
+  --text-muted: #7d8590;
+  --text-dim: #4d5969;
+  --gold: #d4a847;
+  --gold-light: #f0c96a;
+  --gold-dim: rgba(212,168,71,0.15);
+  --teal: #39c5bb;
+  --red: #e05555;
+  --red-dim: rgba(224,85,85,0.1);
+  --green: #56d364;
+  --green-dim: rgba(86,211,100,0.1);
+  --blue: #58a6ff;
+  --blue-dim: rgba(88,166,255,0.1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Instrument Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 2rem 1.5rem 4rem;
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(212,168,71,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 30% at 90% 80%, rgba(57,197,187,0.04) 0%, transparent 50%);
+}
+.page-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(26px, 4vw, 36px);
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.page-title em { font-style: italic; color: var(--gold); }
+.page-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.06em;
+}
+.section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+.page-header { margin-bottom: 2.5rem; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  background: var(--gold-dim);
+  color: var(--gold-light);
+  padding: 4px 12px;
+  border-radius: 99px;
+  border: 1px solid rgba(212,168,71,0.3);
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: var(--border-light); }
+.loan-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.1rem 1.4rem 1rem;
+  margin-bottom: 0.6rem;
+  position: relative;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.loan-card:hover { border-color: var(--border-light); transform: translateY(-1px); }
+.loan-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 0.12em;
+  font-weight: 500;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.loan-num::after { content:''; flex:1; height:1px; background:var(--border); }
+.loan-remove {
+  position: absolute; top: 0.9rem; right: 1rem;
+  background: none; border: none; color: var(--text-dim);
+  cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 8px;
+  border-radius: 4px; transition: color 0.15s, background 0.15s;
+}
+.loan-remove:hover { color: var(--red); background: var(--red-dim); }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.g4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+@media (max-width: 580px) {
+  .g2 { grid-template-columns: 1fr 1fr; }
+  .g3 { grid-template-columns: 1fr 1fr; }
+  .g4 { grid-template-columns: 1fr 1fr; }
+}
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 11px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.04em; }
+input, select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input:focus, select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212,168,71,0.12);
+}
+select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234d5969' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+.date-selects { display: grid; grid-template-columns: 1.4fr 1fr; gap: 6px; }
+.btn-add {
+  background: none;
+  border: 1px dashed var(--border-light);
+  border-radius: 8px;
+  padding: 7px 15px;
+  font-size: 12px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-weight: 500;
+  color: var(--blue);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-bottom: 1rem;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-add:hover, .btn-add:active { border-color: var(--blue); background: var(--blue-dim); }
+.btn-calc {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, var(--gold) 0%, #b8892e 100%);
+  border: none; border-radius: 10px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 14px; font-weight: 600;
+  color: #0d1117; cursor: pointer; letter-spacing: 0.02em;
+  transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 20px rgba(212,168,71,0.25);
+  margin-top: 0.5rem;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-calc:hover, .btn-calc:active { opacity: 0.9; }
+.btn-sm {
+  background: none; border: 1px solid var(--border); border-radius: 7px;
+  padding: 6px 13px; font-size: 12px;
+  font-family: 'Instrument Sans', sans-serif; font-weight: 500; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-save { color: var(--green); }
+.btn-save:hover, .btn-save:active { border-color: var(--green); background: var(--green-dim); }
+.btn-load { color: var(--blue); }
+.btn-load:hover, .btn-load:active { border-color: var(--blue); background: var(--blue-dim); }
+.btn-del { color: var(--red); border: none; background: none; font-size: 12px; cursor: pointer; padding: 6px 4px; -webkit-tap-highlight-color: transparent; }
+.savebar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.savebar input { flex: 1; min-width: 140px; }
+.file-ops { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
+.incrow { display: grid; grid-template-columns: 0.6fr 1.4fr auto; gap: 8px; align-items: end; margin-bottom: 8px; }
+.xbtn {
+  background: none; border: none; font-size: 18px;
+  color: var(--text-dim); cursor: pointer; height: 36px; width: 36px;
+  border-radius: 4px; transition: color 0.15s, background 0.15s;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.xbtn:hover, .xbtn:active { color: var(--red); background: var(--red-dim); }
+.divider { display: flex; align-items: center; gap: 12px; margin: 1.5rem 0 1rem; }
+.divider span { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); white-space: nowrap; }
+.divider::before, .divider::after { content:''; flex:1; height:1px; background:var(--border); }
+.metgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.met {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1rem 1.1rem;
+  position: relative; overflow: hidden;
+}
+.met::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--gold); opacity:0.6; }
+.met.teal::before { background: var(--teal); }
+.met.green::before { background: var(--green); }
+.met.red::before { background: var(--red); }
+.metlbl { font-size:10px; font-weight:600; color:var(--text-dim); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }
+.metval { font-family:'DM Mono',monospace; font-size:17px; font-weight:500; color:var(--text); }
+.table-wrap { overflow-x: auto; border-radius: 10px; -webkit-overflow-scrolling: touch; }
+table { width:100%; border-collapse:collapse; font-size:12.5px; }
+thead { background: var(--surface2); }
+th { text-align:left; font-size:10px; font-weight:600; color:var(--text-dim); letter-spacing:0.1em; text-transform:uppercase; padding:10px 14px; border-bottom:1px solid var(--border); white-space:nowrap; }
+td { padding:9px 14px; border-bottom:1px solid var(--border); font-family:'DM Mono',monospace; font-size:12px; color:var(--text); }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover td { background: rgba(255,255,255,0.018); }
+td.yr { color:var(--text-dim); font-weight:500; }
+td.income { color:var(--text-muted); }
+td.status-ibr { color:var(--teal); font-weight:500; }
+td.status-cap { color:var(--gold); font-weight:500; }
+td.positive { color:var(--green); }
+td.negative { color:var(--red); }
+td.neutral { color:var(--text-dim); }
+#results { display:none; }
+#results > * { animation: fadeUp 0.35s ease both; }
+#results > *:nth-child(2) { animation-delay:0.06s; }
+#results > *:nth-child(3) { animation-delay:0.12s; }
+#results > *:nth-child(4) { animation-delay:0.18s; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--surface); }
+::-webkit-scrollbar-thumb { background:var(--border-light); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">IBR Loan <em>Simulator</em></div>
+    <div class="page-subtitle">2026 GUIDELINES · 10-YEAR PROJECTION</div>
+  </div>
+  <span class="badge">FEDERAL IBR</span>
+</div>
+
+<!-- Save / Load -->
+<div class="card">
+  <div class="section-label">Scenarios</div>
+  <div class="savebar">
+    <input type="text" id="save-name" placeholder="Name this scenario…">
+    <button class="btn-sm btn-save" id="btn-save">Save</button>
+  </div>
+  <div class="savebar">
+    <select id="load-sel" style="flex:1"><option value="">— Saved scenarios —</option></select>
+    <button class="btn-sm btn-load" id="btn-load">Load</button>
+    <button class="btn-del" id="btn-del">Delete</button>
+  </div>
+  <div class="file-ops">
+    <div class="savebar">
+      <button class="btn-sm btn-load" id="btn-export">↓ Export JSON</button>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+      <button class="btn-sm btn-load" id="btn-import">↑ Import JSON</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loans -->
+<div class="divider"><span>Loan Disbursements</span></div>
+<div id="loans-wrap"></div>
+<button class="btn-add" id="btn-add-loan">＋ Add another loan</button>
+
+<!-- Repayment Settings -->
+<div class="divider"><span>Repayment Settings</span></div>
+<div class="card">
+  <div class="g2" style="margin-bottom:12px">
+    <div class="field">
+      <label>Repayment start</label>
+      <div class="date-selects">
+        <select id="start-month">
+          <option value="1">January</option><option value="2">February</option>
+          <option value="3">March</option><option value="4">April</option>
+          <option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8" selected>August</option>
+          <option value="9">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
+        </select>
+        <select id="start-year"></select>
+      </div>
+    </div>
+    <div class="field">
+      <label>IBR plan type</label>
+      <select id="ibr-type">
+        <option value="0.10">New borrower — 10%</option>
+        <option value="0.15">Older borrower — 15%</option>
+      </select>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="field"><label>Family size</label><input type="number" id="fam" value="1" min="1" inputmode="numeric"></div>
+    <div class="field">
+      <label>State</label>
+      <select id="state">
+        <option value="48">Contiguous US</option>
+        <option value="alaska">Alaska</option>
+        <option value="hawaii">Hawaii</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Cash & Fees -->
+<div class="divider"><span>Cash &amp; Fees</span></div>
+<div class="card">
+  <div class="g3">
+    <div class="field"><label>Cash available ($)</label><input type="number" id="cash-avail" value="50000" min="0" step="1000" inputmode="decimal"></div>
+    <div class="field"><label>Annual return on cash (%)</label><input type="number" id="cash-return" value="4.0" step="0.1" min="0" inputmode="decimal"></div>
+    <div class="field"><label>Fees / semester ($)</label><input type="number" id="fees-sem" value="20000" step="500" min="0" inputmode="decimal"></div>
+  </div>
+</div>
+
+<!-- Income Projection -->
+<div class="divider"><span>10-Year Income Projection</span></div>
+<div class="card">
+  <div id="income-wrap"></div>
+  <button class="btn-add" id="btn-add-income">＋ Add year</button>
+</div>
+
+<button class="btn-calc" id="btn-calc">Calculate 10-Year IBR Projection →</button>
+
+<!-- Results -->
+<div id="results">
+  <div class="divider" style="margin-top:2rem"><span>Summary</span></div>
+  <div class="card">
+    <div class="metgrid" id="summary"></div>
+  </div>
+  <div class="divider"><span>Loan Repayment · Year-by-Year</span></div>
+  <div class="card" style="padding:0; overflow:hidden">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Yr</th><th>Income</th><th>Monthly Pmt</th><th>Status</th><th>Cumul. Paid</th><th>Loan Balance</th>
+        </tr></thead>
+        <tbody id="tbody-loan"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="divider"><span>Cash Projection · School &amp; Repayment</span></div>
+  <div class="card" style="padding:0; overflow:hidden">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Period</th><th>Event</th><th>Fees Due</th><th>Loan Covers</th><th>Cash Change</th><th>Cash Balance</th>
+        </tr></thead>
+        <tbody id="tbody-cash"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Helpers ──────────────────────────────────────────────────────────────────
+var lc = 0;
+var FPL     = {48:15960, alaska:19950, hawaii:18360};
+var FPL_ADD = {48:5680,  alaska:7100,  hawaii:6530};
+var MONTHS  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function fmt(n){ return '$'+Math.round(n).toLocaleString(); }
+
+// Populate a <select> with years
+function populateYears(sel, from, to, selected){
+  sel.innerHTML = '';
+  for(var y = from; y <= to; y++){
+    var o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if(y === selected) o.selected = true;
+    sel.appendChild(o);
+  }
+}
+
+// Build date string YYYY-MM-DD from parts (no Date parsing needed)
+function dateStr(year, month){ // month 1-12
+  return year + '-' + String(month).padStart(2,'0') + '-01';
+}
+
+// Parse YYYY-MM-DD safely without Date constructor (avoids iOS timezone shifts)
+function parseDateStr(s){
+  // s = 'YYYY-MM-DD'
+  var parts = (s||'').split('-');
+  return { year: parseInt(parts[0])||2026, month: parseInt(parts[1])||1 };
+}
+
+// Month name from number 1-12
+function monthName(m){ return MONTHS[m-1]; }
+
+// ── Date select pair builder ─────────────────────────────────────────────────
+function makeDateSelects(monthVal, yearVal){
+  var wrap = document.createElement('div');
+  wrap.className = 'date-selects';
+
+  var mSel = document.createElement('select');
+  mSel.className = 'lmonth';
+  MONTHS.forEach(function(name, i){
+    var o = document.createElement('option');
+    o.value = i+1; o.textContent = name;
+    if((i+1) === monthVal) o.selected = true;
+    mSel.appendChild(o);
+  });
+
+  var ySel = document.createElement('select');
+  ySel.className = 'lyear';
+  for(var y = 2024; y <= 2035; y++){
+    var o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if(y === yearVal) o.selected = true;
+    ySel.appendChild(o);
+  }
+
+  wrap.appendChild(mSel);
+  wrap.appendChild(ySel);
+  return wrap;
+}
+
+// ── Add Loan ─────────────────────────────────────────────────────────────────
+function addLoan(d){
+  lc++;
+  var wrap = document.getElementById('loans-wrap');
+
+  var div = document.createElement('div');
+  div.className = 'loan-card';
+
+  // Header row
+  var numDiv = document.createElement('div');
+  numDiv.className = 'loan-num';
+  numDiv.textContent = 'LOAN ' + lc;
+
+  var removeBtn = document.createElement('button');
+  removeBtn.className = 'loan-remove';
+  removeBtn.textContent = '×';
+  removeBtn.setAttribute('type','button');
+  removeBtn.addEventListener('click', function(){
+    div.parentNode.removeChild(div);
+    renumberLoans();
+  });
+
+  // Grid
+  var grid = document.createElement('div');
+  grid.className = 'g4';
+
+  // Amount field
+  var amtField = document.createElement('div');
+  amtField.className = 'field';
+  var amtLabel = document.createElement('label'); amtLabel.textContent = 'Amount ($)';
+  var amtInput = document.createElement('input');
+  amtInput.type = 'number'; amtInput.className = 'lamount';
+  amtInput.value = d ? d.amount : 25000;
+  amtInput.setAttribute('inputmode','decimal');
+  amtField.appendChild(amtLabel); amtField.appendChild(amtInput);
+
+  // Date field (month + year selects)
+  var dateField = document.createElement('div');
+  dateField.className = 'field';
+  var dateLabel = document.createElement('label'); dateLabel.textContent = 'Disbursement';
+  var dateParsed = d && d.date ? parseDateStr(d.date) : {year:2026, month:8};
+  var dateSelWrap = makeDateSelects(dateParsed.month, dateParsed.year);
+  dateField.appendChild(dateLabel); dateField.appendChild(dateSelWrap);
+
+  // Rate field
+  var rateField = document.createElement('div');
+  rateField.className = 'field';
+  var rateLabel = document.createElement('label'); rateLabel.textContent = 'Rate (%)';
+  var rateInput = document.createElement('input');
+  rateInput.type = 'number'; rateInput.className = 'lrate';
+  rateInput.step = '0.1'; rateInput.value = d ? d.rate : 8.0;
+  rateInput.setAttribute('inputmode','decimal');
+  rateField.appendChild(rateLabel); rateField.appendChild(rateInput);
+
+  grid.appendChild(amtField);
+  grid.appendChild(dateField);
+  grid.appendChild(rateField);
+
+  div.appendChild(numDiv);
+  div.appendChild(removeBtn);
+  div.appendChild(grid);
+  wrap.appendChild(div);
+}
+
+function renumberLoans(){
+  document.querySelectorAll('#loans-wrap .loan-card').forEach(function(c,i){
+    c.querySelector('.loan-num').textContent = 'LOAN '+(i+1);
+  });
+  lc = document.querySelectorAll('#loans-wrap .loan-card').length;
+}
+
+// ── Add Income Row ────────────────────────────────────────────────────────────
+function addIncome(d){
+  var wrap = document.getElementById('income-wrap');
+  var row = document.createElement('div');
+  row.className = 'incrow';
+
+  var yrField = document.createElement('div'); yrField.className = 'field';
+  var yrLabel = document.createElement('label'); yrLabel.textContent = 'Year';
+  var yrInput = document.createElement('input');
+  yrInput.type = 'number'; yrInput.className = 'iyr';
+  yrInput.value = d ? d.year : '';
+  yrInput.setAttribute('inputmode','numeric');
+  yrField.appendChild(yrLabel); yrField.appendChild(yrInput);
+
+  var amtField = document.createElement('div'); amtField.className = 'field';
+  var amtLabel = document.createElement('label'); amtLabel.textContent = 'Income ($)';
+  var amtInput = document.createElement('input');
+  amtInput.type = 'number'; amtInput.className = 'iamt';
+  amtInput.value = d ? d.amount : 50000;
+  amtInput.setAttribute('inputmode','decimal');
+  amtField.appendChild(amtLabel); amtField.appendChild(amtInput);
+
+  var xBtn = document.createElement('button');
+  xBtn.className = 'xbtn'; xBtn.textContent = '×';
+  xBtn.setAttribute('type','button');
+  xBtn.addEventListener('click', function(){ row.parentNode.removeChild(row); });
+
+  row.appendChild(yrField);
+  row.appendChild(amtField);
+  row.appendChild(xBtn);
+  wrap.appendChild(row);
+}
+
+// ── Get loan date as month + year integers ───────────────────────────────────
+function getLoanDate(card){
+  var month = parseInt(card.querySelector('.lmonth').value);
+  var year  = parseInt(card.querySelector('.lyear').value);
+  return { month: month, year: year,
+           str: dateStr(year, month),
+           // ms since epoch, day=1, using UTC to avoid timezone issues
+           ms: Date.UTC(year, month-1, 1) };
+}
+
+// ── Calculate ────────────────────────────────────────────────────────────────
+function calculate(){
+  var loans = [];
+  var totalBorrowed = 0;
+
+  document.querySelectorAll('#loans-wrap .loan-card').forEach(function(card){
+    var amt  = parseFloat(card.querySelector('.lamount').value)||0;
+    var ld   = getLoanDate(card);
+    var rate = parseFloat(card.querySelector('.lrate').value)/100;
+    totalBorrowed += amt;
+    loans.push({ amount: amt, month: ld.month, year: ld.year,
+                 str: ld.str, ms: ld.ms, rate: rate });
+  });
+
+  var startMonth = parseInt(document.getElementById('start-month').value);
+  var startYear  = parseInt(document.getElementById('start-year').value);
+  var startMs    = Date.UTC(startYear, startMonth-1, 1);
+
+  var ibrPct     = parseFloat(document.getElementById('ibr-type').value);
+  var fam        = parseInt(document.getElementById('fam').value)||1;
+  var st         = document.getElementById('state').value;
+  var cashAvail  = parseFloat(document.getElementById('cash-avail').value)||0;
+  var cashReturn = parseFloat(document.getElementById('cash-return').value)/100||0;
+  var feesSem    = parseFloat(document.getElementById('fees-sem').value)||0;
+
+  var incomeMap = {};
+  document.querySelectorAll('#income-wrap .incrow').forEach(function(row){
+    var yr = parseInt(row.querySelector('.iyr').value);
+    var amt = parseFloat(row.querySelector('.iamt').value);
+    if(!isNaN(yr) && !isNaN(amt)) incomeMap[yr] = amt;
+  });
+
+  // Standard 10-yr monthly cap
+  var totalStandardMonthly = 0;
+  loans.forEach(function(l){
+    var r = l.rate/12;
+    totalStandardMonthly += r>0 ? l.amount*(r*Math.pow(1+r,120))/(Math.pow(1+r,120)-1) : l.amount/120;
+  });
+
+  // ── Cash during school ──────────────────────────────────────────────────
+  var loanBySem = {};
+  loans.forEach(function(l){
+    loanBySem[l.str] = (loanBySem[l.str]||0) + l.amount;
+  });
+  var semKeys = Object.keys(loanBySem).sort();
+
+  var cashBalance = cashAvail;
+  var cashRows = [];
+
+  semKeys.forEach(function(key){
+    var loanAmt   = loanBySem[key];
+    var fees      = feesSem;
+    var loanCovers = Math.min(loanAmt, fees);
+    var cashUsed  = Math.min(cashBalance, Math.max(0, fees - loanCovers));
+    cashBalance   = Math.max(0, cashBalance - cashUsed);
+
+    var p = parseDateStr(key);
+    var semLabel = (p.month >= 7 ? 'Fall' : 'Spring') + ' ' + p.year;
+    cashRows.push({ period: semLabel, event: 'Semester Fees', fees: fees,
+                    loanCovers: loanCovers, cashChange: -cashUsed,
+                    cashBalance: cashBalance, isSchool: true });
+  });
+
+  // ── Loan repayment ──────────────────────────────────────────────────────
+  var MS_PER_MONTH = 365.25/12 * 24*3600*1000;
+  var balances = loans.map(function(l){
+    var monthsElapsed = Math.max(0, (startMs - l.ms) / MS_PER_MONTH);
+    return l.amount * Math.pow(1 + l.rate/12, monthsElapsed);
+  });
+
+  var totalPaid = 0;
+  var tbodyLoan = document.getElementById('tbody-loan');
+  tbodyLoan.innerHTML = '';
+
+  for(var yr=1; yr<=10; yr++){
+    var keys = Object.keys(incomeMap).map(Number).sort(function(a,b){return b-a;});
+    var income = incomeMap[yr] || (function(){
+      var k = keys.find(function(k){ return k<=yr; });
+      return k ? incomeMap[k] : 50000;
+    })();
+
+    var rawIbr = (Math.max(0, income - 1.5*(FPL[st]+(fam-1)*FPL_ADD[st])) * ibrPct) / 12;
+    var monthlyPmt = Math.min(rawIbr, totalStandardMonthly);
+    var yearPaid = 0;
+
+    for(var m=0; m<12; m++){
+      var curBal = balances.reduce(function(a,b){return a+b;},0);
+      if(curBal <= 0.01) break;
+      balances = balances.map(function(b,i){ return b + b*(loans[i].rate/12); });
+      var total = balances.reduce(function(a,b){return a+b;},0);
+      var pmt   = Math.min(monthlyPmt, total);
+      yearPaid += pmt;
+      var ratio = pmt / total;
+      balances = balances.map(function(b){ return Math.max(0, b - b*ratio); });
+    }
+    totalPaid += yearPaid;
+    var remBal = balances.reduce(function(a,b){return a+b;},0);
+
+    var tr = document.createElement('tr');
+    var isCap = rawIbr > totalStandardMonthly;
+    tr.innerHTML =
+      '<td class="yr">'+yr+'</td>'+
+      '<td class="income">'+fmt(income)+'</td>'+
+      '<td>'+fmt(monthlyPmt)+'/mo</td>'+
+      '<td class="'+(isCap?'status-cap':'status-ibr')+'">'+(isCap?'Capped':'IBR')+'</td>'+
+      '<td>'+fmt(totalPaid)+'</td>'+
+      '<td>'+fmt(remBal)+'</td>';
+    tbodyLoan.appendChild(tr);
+
+    // Cash grows
+    var prev = cashBalance;
+    cashBalance = cashBalance * (1 + cashReturn);
+    cashRows.push({ period: 'Repay Yr '+yr+' ('+(startYear+yr-1)+')',
+                    event: 'Investment Growth', fees:0, loanCovers:0,
+                    cashChange: cashBalance-prev, cashBalance: cashBalance,
+                    isSchool: false });
+  }
+
+  // ── Cash table ──────────────────────────────────────────────────────────
+  var tbodyCash = document.getElementById('tbody-cash');
+  tbodyCash.innerHTML = '';
+  cashRows.forEach(function(row){
+    var tr = document.createElement('tr');
+    if(row.isSchool){
+      var chgStr   = row.cashChange < 0 ? '-'+fmt(Math.abs(row.cashChange)) : '—';
+      var chgClass = row.cashChange < 0 ? 'negative' : 'neutral';
+      tr.innerHTML =
+        '<td class="yr">'+row.period+'</td>'+
+        '<td>'+row.event+'</td>'+
+        '<td>'+fmt(row.fees)+'</td>'+
+        '<td>'+fmt(row.loanCovers)+'</td>'+
+        '<td class="'+chgClass+'">'+chgStr+'</td>'+
+        '<td>'+fmt(row.cashBalance)+'</td>';
+    } else {
+      tr.innerHTML =
+        '<td class="yr">'+row.period+'</td>'+
+        '<td style="color:var(--teal)">'+row.event+'</td>'+
+        '<td class="neutral">—</td>'+
+        '<td class="neutral">—</td>'+
+        '<td class="positive">+'+fmt(row.cashChange)+'</td>'+
+        '<td class="positive">'+fmt(row.cashBalance)+'</td>';
+    }
+    tbodyCash.appendChild(tr);
+  });
+
+  // ── Summary ─────────────────────────────────────────────────────────────
+  var schoolRows = cashRows.filter(function(r){return r.isSchool;});
+  var cashAtStart = schoolRows.length ? schoolRows[schoolRows.length-1].cashBalance : cashAvail;
+  document.getElementById('summary').innerHTML =
+    '<div class="met"><div class="metlbl">Total Borrowed</div><div class="metval">'+fmt(totalBorrowed)+'</div></div>'+
+    '<div class="met"><div class="metlbl">Std. Monthly Cap</div><div class="metval">'+fmt(totalStandardMonthly)+'/mo</div></div>'+
+    '<div class="met red"><div class="metlbl">Total Paid (10 yr)</div><div class="metval">'+fmt(totalPaid)+'</div></div>'+
+    '<div class="met"><div class="metlbl">Loan Balance Remaining</div><div class="metval">'+fmt(remBal)+'</div></div>'+
+    '<div class="met teal"><div class="metlbl">Cash at Repay Start</div><div class="metval">'+fmt(cashAtStart)+'</div></div>'+
+    '<div class="met green"><div class="metlbl">Cash After 10yr Growth</div><div class="metval">'+fmt(cashBalance)+'</div></div>';
+
+  document.getElementById('results').style.display = 'block';
+  setTimeout(function(){
+    document.getElementById('results').scrollIntoView({behavior:'smooth', block:'start'});
+  }, 50);
+}
+
+// ── Persistence ───────────────────────────────────────────────────────────────
+function getFormData(){
+  var loans = [];
+  document.querySelectorAll('#loans-wrap .loan-card').forEach(function(c){
+    var ld = getLoanDate(c);
+    loans.push({ amount: c.querySelector('.lamount').value,
+                 date: ld.str,
+                 rate: c.querySelector('.lrate').value });
+  });
+  var incomes = [];
+  document.querySelectorAll('#income-wrap .incrow').forEach(function(r){
+    incomes.push({ year: r.querySelector('.iyr').value,
+                   amount: r.querySelector('.iamt').value });
+  });
+  return {
+    loans, incomes,
+    startMonth: document.getElementById('start-month').value,
+    startYear:  document.getElementById('start-year').value,
+    ibrType:    document.getElementById('ibr-type').value,
+    fam:        document.getElementById('fam').value,
+    state:      document.getElementById('state').value,
+    cashAvail:  document.getElementById('cash-avail').value,
+    cashReturn: document.getElementById('cash-return').value,
+    feesSem:    document.getElementById('fees-sem').value,
+    name:       document.getElementById('save-name').value
+  };
+}
+
+function restoreFormData(d){
+  document.getElementById('loans-wrap').innerHTML = ''; lc = 0;
+  (d.loans||[]).forEach(function(l){ addLoan(l); });
+  document.getElementById('income-wrap').innerHTML = '';
+  (d.incomes||[]).forEach(function(i){ addIncome(i); });
+  // Handle old format that stored startDate as YYYY-MM-DD
+  if(d.startMonth){
+    document.getElementById('start-month').value = d.startMonth;
+    document.getElementById('start-year').value  = d.startYear;
+  } else if(d.startDate){
+    var p = parseDateStr(d.startDate);
+    document.getElementById('start-month').value = p.month;
+    document.getElementById('start-year').value  = p.year;
+  }
+  if(d.ibrType)    document.getElementById('ibr-type').value    = d.ibrType;
+  if(d.fam)        document.getElementById('fam').value         = d.fam;
+  if(d.state)      document.getElementById('state').value       = d.state;
+  if(d.cashAvail)  document.getElementById('cash-avail').value  = d.cashAvail;
+  if(d.cashReturn) document.getElementById('cash-return').value = d.cashReturn;
+  if(d.feesSem)    document.getElementById('fees-sem').value    = d.feesSem;
+  document.getElementById('save-name').value = d.name||'';
+}
+
+function saveScenario(){
+  var data = getFormData();
+  var name = data.name.trim() || 'Scenario '+new Date().toLocaleTimeString();
+  var slots = JSON.parse(localStorage.getItem('ibr_2026')||'{}');
+  slots[name] = data;
+  localStorage.setItem('ibr_2026', JSON.stringify(slots));
+  refreshSel();
+}
+function loadScenario(){
+  var name = document.getElementById('load-sel').value;
+  var slots = JSON.parse(localStorage.getItem('ibr_2026')||'{}');
+  if(slots[name]) restoreFormData(slots[name]);
+}
+function delScenario(){
+  var name = document.getElementById('load-sel').value;
+  var slots = JSON.parse(localStorage.getItem('ibr_2026')||'{}');
+  delete slots[name];
+  localStorage.setItem('ibr_2026', JSON.stringify(slots));
+  refreshSel();
+}
+function exportJSON(){
+  var data = getFormData();
+  var blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (data.name||'loan_scenario')+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+function importJSON(el){
+  if(!el.files||!el.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{ restoreFormData(JSON.parse(e.target.result)); }
+    catch(err){ alert('Invalid JSON file'); }
+  };
+  reader.readAsText(el.files[0]);
+}
+function refreshSel(){
+  var slots = JSON.parse(localStorage.getItem('ibr_2026')||'{}');
+  var sel = document.getElementById('load-sel');
+  sel.innerHTML = '<option value="">— Saved scenarios —</option>';
+  Object.keys(slots).forEach(function(k){
+    var o = document.createElement('option'); o.value=k; o.textContent=k; sel.appendChild(o);
+  });
+}
+
+// ── Wire up all buttons via addEventListener (iOS-safe) ───────────────────────
+document.addEventListener('DOMContentLoaded', function(){
+
+  // Populate year selects
+  populateYears(document.getElementById('start-year'), 2024, 2040, 2029);
+
+  // Buttons
+  document.getElementById('btn-save').addEventListener('click', saveScenario);
+  document.getElementById('btn-load').addEventListener('click', loadScenario);
+  document.getElementById('btn-del').addEventListener('click', delScenario);
+  document.getElementById('btn-export').addEventListener('click', exportJSON);
+  document.getElementById('btn-import').addEventListener('click', function(){
+    document.getElementById('import-file').click();
+  });
+  document.getElementById('import-file').addEventListener('change', function(){
+    importJSON(this);
+  });
+  document.getElementById('btn-add-loan').addEventListener('click', function(){ addLoan(); });
+  document.getElementById('btn-add-income').addEventListener('click', function(){ addIncome(); });
+  document.getElementById('btn-calc').addEventListener('click', calculate);
+
+  // ── Defaults ──
+  var defaultLoans = [
+    {amount:25000, date:'2026-08-01', rate:8.0},
+    {amount:25000, date:'2027-01-01', rate:8.0},
+    {amount:25000, date:'2027-08-01', rate:8.0},
+    {amount:25000, date:'2028-01-01', rate:8.0},
+    {amount:25000, date:'2028-08-01', rate:8.0},
+    {amount:25000, date:'2029-01-01', rate:8.0},
+  ];
+  defaultLoans.forEach(function(l){ addLoan(l); });
+
+  for(var i=1; i<=10; i++) addIncome({year:i, amount:50000+(i-1)*3000});
+
+  refreshSel();
+});
+</script>
+</body>
+</html>
